@@ -1,0 +1,70 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>WiFi Attendance</title>
+  <style>
+    body{font-family:system-ui,Arial;max-width:600px;margin:40px auto;padding:20px}
+    input,button{padding:10px;margin:6px 0;width:100%}
+    button{cursor:pointer}
+    #message{margin-top:12px}
+  </style>
+</head>
+<body>
+  <h2>WiFi Based Attendance</h2>
+  <form id="attendanceForm">
+    <input id="name" placeholder="Full Name" required />
+    <input id="email" placeholder="School Email" type="email" required />
+    <button id="submitBtn" type="submit">Mark Attendance</button>
+  </form>
+  <p id="message"></p>
+
+  <script>
+    const GAS_URL = "https://script.google.com/macros/s/AKfycbyw9lM0pJUlBxaHoyCdgplHUwCTN2hoCq0MIZ4_bdyW2nsh8sy3ny7Tl6CfbFbgeHbLwA/exec";
+
+    async function getPublicIP() {
+      try {
+        const r = await fetch("https://api.ipify.org?format=json");
+        const j = await r.json();
+        return j.ip;
+      } catch (e) {
+        console.error("IP fetch failed", e);
+        return null;
+      }
+    }
+
+    document.getElementById("attendanceForm").addEventListener("submit", async (ev) => {
+      ev.preventDefault();
+      const name = document.getElementById("name").value.trim();
+      const email = document.getElementById("email").value.trim();
+
+      document.getElementById("submitBtn").disabled = true;
+      document.getElementById("message").innerText = "Checking your network...";
+
+      const ip = await getPublicIP();
+      if (!ip) {
+        document.getElementById("message").innerText = "Could not determine public IP. Check connection.";
+        document.getElementById("submitBtn").disabled = false;
+        return;
+      }
+
+      const payload = { name, email, userIP: ip };
+
+      try {
+        const res = await fetch(GAS_URL, {
+          method: "POST",
+          body: JSON.stringify(payload),
+          headers: { "Content-Type": "application/json" }
+        });
+        const text = await res.text();
+        document.getElementById("message").innerText = text;
+      } catch (err) {
+        document.getElementById("message").innerText = "Network error: " + err.toString();
+      } finally {
+        document.getElementById("submitBtn").disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>
