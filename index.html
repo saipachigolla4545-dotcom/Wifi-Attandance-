@@ -3,25 +3,30 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>WiFi Attendance</title>
+  <title>WiFi Based Attendance</title>
   <style>
-    body{font-family:system-ui,Arial;max-width:600px;margin:40px auto;padding:20px}
-    input,button{padding:10px;margin:6px 0;width:100%}
-    button{cursor:pointer}
-    #message{margin-top:12px}
+    body{font-family:system-ui,Arial;max-width:700px;margin:40px auto;padding:20px}
+    h2{font-size:28px;margin-bottom:18px}
+    input,button{padding:12px;margin:8px 0;width:100%;box-sizing:border-box;border:1px solid #ccc;border-radius:4px}
+    input{background:#eef7ff}
+    button{background:#f0f0f0;border:1px solid #bbb;cursor:pointer}
+    #message{margin-top:14px;color:#222}
   </style>
 </head>
 <body>
   <h2>WiFi Based Attendance</h2>
+
   <form id="attendanceForm">
     <input id="name" placeholder="Full Name" required />
     <input id="email" placeholder="School Email" type="email" required />
     <button id="submitBtn" type="submit">Mark Attendance</button>
   </form>
+
   <p id="message"></p>
 
   <script>
-    const GAS_URL = "https://script.google.com/macros/s/AKfycbyw9lM0pJUlBxaHoyCdgplHUwCTN2hoCq0MIZ4_bdyW2nsh8sy3ny7Tl6CfbFbgeHbLwA/exec";
+    // <-- REPLACE this with your deployed Apps Script /exec URL
+    const GAS_URL = "https://script.google.com/macros/s/AKfycbzo7I0Q-0mdPP_p6T8R3jL4jqfbD_XwvtpIGPpyxg6j0sv68S2gFXDEtXEvYVznZcQ67w/exec";
 
     async function getPublicIP() {
       try {
@@ -49,17 +54,23 @@
         return;
       }
 
-      const payload = { name, email, userIP: ip };
+      // Use form-encoded body to avoid CORS preflight
+      const payload = new URLSearchParams();
+      payload.append('name', name);
+      payload.append('email', email);
+      payload.append('userIP', ip);
 
       try {
         const res = await fetch(GAS_URL, {
           method: "POST",
-          body: JSON.stringify(payload),
-          headers: { "Content-Type": "application/json" }
+          body: payload
         });
+
+        // read response text and show it
         const text = await res.text();
         document.getElementById("message").innerText = text;
       } catch (err) {
+        console.error("Fetch error:", err);
         document.getElementById("message").innerText = "Network error: " + err.toString();
       } finally {
         document.getElementById("submitBtn").disabled = false;
